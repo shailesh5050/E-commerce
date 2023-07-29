@@ -1,14 +1,41 @@
-import products from "../../products"
-import { useParams } from "react-router-dom"
+/* eslint-disable no-unused-vars */
+import { useState } from "react"
+import { useParams,useNavigate } from "react-router-dom"
 import { Link } from "react-router-dom"
 import { Row,Col,Image,ListGroup,Button,Card } from "react-bootstrap"
 import Rating from "../Components/Rating"
+import { useGetProductQuery } from "../slices/productApiSlice"
+import Loader from "../Components/Loader"
+import Message from "../Components/Message"
+import { useDispatch } from "react-redux"
+import { addToCart } from "../slices/cartSlice"
+
 const ProductScreen = () => {
+    const navigate = useNavigate()
+    const dispatch = useDispatch()
     const {id:productId} = useParams()
-    const product = products.find((item)=>item._id===productId)
-    console.log(product)
+    const [qty,setQty] = useState(1)
+    const {data:product,isLoading,isError,error} = useGetProductQuery(productId)
+    function addToCartHandler(){
+        dispatch(addToCart({...product,qty}))
+       // navigate(`/cart/${product._id}?qty=${qty}`)
+        
+    }
+
+
+    if(isLoading){
+        return(
+            <Loader />
+        )
+    }
+    if(isError){
+        return(
+            <Message variant="danger">{error?.data?.message}</Message>
+        )
+    }
   return (
     <div>
+        
         <Link className="btn btn-light my-3" to="/">Go Back</Link>
         <Row>
             <Col md={6}>
@@ -55,9 +82,29 @@ const ProductScreen = () => {
                                 </Col>                               
                             </Row>
                         </ListGroup.Item>
+                        {product.countInStock > 0 && (
+                            <ListGroup.Item>
+                                <Row>
+                                    <Col>
+                                        Qty
+                                    </Col>
+                                    <Col>
+                                        <select value={qty} onChange={(e)=>setQty(e.target.value)}>
+                                            {[...Array(product.countInStock).keys()].map((item)=>{
+                                                return(
+                                                    <option key={item+1} value={item+1}>{item+1}</option>
+                                                )
+                                            }
+                                            )}
+                                        </select>
+                                    </Col>
+                                </Row>
+                            </ListGroup.Item>
+                        )    
+                        }
                         <ListGroup.Item>
                             <Row>
-                                   <Button className="btn-block" type="button" disabled={product.countInStock===0}>Add To Cart</Button>
+                                   <Button className="btn-block" type="button" disabled={product.countInStock===0} onClick={addToCartHandler} >Add To Cart</Button>
                                                                
                             </Row>
                         </ListGroup.Item>
